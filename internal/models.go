@@ -28,6 +28,7 @@ type Page int
 
 const (
 	LoginPage Page = iota
+	LogoutPage
 	AppsPage
 )
 
@@ -43,7 +44,7 @@ type AppsModel struct {
 }
 
 type Model struct {
-	User         utils.User
+	User         User
 	windowWidth  int
 	windowHeight int
 
@@ -79,7 +80,7 @@ func NewModel() Model {
 
 func (m Model) Init() tea.Cmd {
 	var cmds []tea.Cmd
-	cmds = append(cmds, utils.CheckTokenCmd())
+	cmds = append(cmds, CheckTokenCmd())
 	cmds = append(cmds, textinput.Blink)
 	return tea.Batch(cmds...)
 }
@@ -88,7 +89,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case utils.CheckTokenMsg:
+	case CheckTokenMsg:
 		if msg.Err == nil {
 			m.CurrentPage = AppsPage
 			m.User = msg.User
@@ -106,11 +107,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case AppsPage:
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "ctrl+c", "q":
+			switch msg.Type {
+			case tea.KeyEsc:
 				return m, tea.Quit
-			case "tab", "enter":
+			case tea.KeyTab:
 				m.CurrentPage = LoginPage
+				return m, cmd
+			}
+			switch msg.String() {
+			case "l":
+				m.CurrentPage = LogoutPage
+				return m, cmd
+			}
+		}
+
+	case LogoutPage:
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "y":
+				m.CurrentPage = LoginPage
+				cmd = utils.Logout()
+				return m, cmd
+			case "n":
+				m.CurrentPage = AppsPage
 				return m, cmd
 			}
 		}
@@ -141,6 +161,13 @@ func (m Model) View() string {
 	case AppsPage:
 		content := m.User.Name +
 			"\nApps Page:\n\n"
+		boxed := borderStyle.Render(content)
+		return centerStyle.Render(boxed)
+
+	case LogoutPage:
+		content := m.User.Name +
+			"\nAre you sure to logout?:\n\n" +
+			"Confirm(y) Cancel(n)"
 		boxed := borderStyle.Render(content)
 		return centerStyle.Render(boxed)
 	}
