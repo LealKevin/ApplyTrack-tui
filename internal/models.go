@@ -1,10 +1,27 @@
 package main
 
 import (
+	"tui-apptrack/internal/misc"
 	"tui-apptrack/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+// LipGloss styles
+var (
+	borderStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder()).
+			Padding(1, 2).
+			Align(lipgloss.Center).
+			BorderForeground(lipgloss.Color("63"))
+
+	centerStyle = lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Width(50).
+			Height(15).
+			Margin(1, 2)
 )
 
 type Page int
@@ -26,6 +43,9 @@ type AppsModel struct {
 }
 
 type Model struct {
+	windowWidth  int
+	windowHeight int
+
 	CurrentPage Page
 	Login       LoginModel
 	Apps        AppsModel
@@ -63,12 +83,16 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch m.CurrentPage {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.windowWidth = msg.Width
+		m.windowHeight = msg.Height
+	}
 
+	switch m.CurrentPage {
 	case LoginPage:
-		var loginCmd tea.Cmd
-		m.Login, loginCmd, m.CurrentPage = UpdateLogin(m.Login, msg)
-		return m, loginCmd
+		m.Login, cmd, m.CurrentPage = UpdateLogin(m.Login, msg)
+		return m, cmd
 
 	case AppsPage:
 		switch msg := msg.(type) {
@@ -89,13 +113,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	centerStyle := lipgloss.NewStyle().
+		Width(m.windowWidth).
+		Height(m.windowHeight).
+		Align(lipgloss.Center, lipgloss.Center)
+
 	switch m.CurrentPage {
 	case LoginPage:
-		return "\nEnter your Email and password:\n" +
+		content := misc.Logo + "\n\nEnter your Email and password:\n\n" +
 			m.Login.EmailInput.View() + "\n" +
-			m.Login.PasswordInput.View() + "\n\nPress 'q' to quit.\n"
+			m.Login.PasswordInput.View() + "\n\nPress 'esc' to quit.\n"
+
+		boxed := borderStyle.Render(content)
+		return centerStyle.Render(boxed)
 	case AppsPage:
-		return "Welcome to the Apps Page!"
+		content := "\nApps Page:\n\n"
+		boxed := borderStyle.Render(content)
+		return centerStyle.Render(boxed)
 	}
 	return ""
 }
