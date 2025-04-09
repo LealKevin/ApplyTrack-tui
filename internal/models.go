@@ -43,6 +43,7 @@ type AppsModel struct {
 }
 
 type Model struct {
+	User         utils.User
 	windowWidth  int
 	windowHeight int
 
@@ -77,13 +78,21 @@ func NewModel() Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return textinput.Blink
+	var cmds []tea.Cmd
+	cmds = append(cmds, utils.CheckTokenCmd())
+	cmds = append(cmds, textinput.Blink)
+	return tea.Batch(cmds...)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case utils.CheckTokenMsg:
+		if msg.Err == nil {
+			m.CurrentPage = AppsPage
+			m.User = msg.User
+		}
 	case tea.WindowSizeMsg:
 		m.windowWidth = msg.Width
 		m.windowHeight = msg.Height
@@ -119,6 +128,7 @@ func (m Model) View() string {
 		Align(lipgloss.Center, lipgloss.Center)
 
 	switch m.CurrentPage {
+	//Login page's style
 	case LoginPage:
 		content := misc.Logo + "\n\nEnter your Email and password:\n\n" +
 			m.Login.EmailInput.View() + "\n" +
@@ -126,8 +136,11 @@ func (m Model) View() string {
 
 		boxed := borderStyle.Render(content)
 		return centerStyle.Render(boxed)
+
+		//Apps page's style
 	case AppsPage:
-		content := "\nApps Page:\n\n"
+		content := m.User.Name +
+			"\nApps Page:\n\n"
 		boxed := borderStyle.Render(content)
 		return centerStyle.Render(boxed)
 	}
