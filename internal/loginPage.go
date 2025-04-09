@@ -1,43 +1,42 @@
-package handlers
+package main
 
 import (
-	"fmt"
-	"tui-apptrack/models"
 	"tui-apptrack/utils"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func UpdateLogin(m models.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func UpdateLogin(m LoginModel, msg tea.Msg) (LoginModel, tea.Cmd, Page) {
 	var cmds []tea.Cmd
+	var page Page = LoginPage
 
 	switch msg := msg.(type) {
 	case utils.LoginMsg:
 		if msg.Err != nil {
 			m.ErrMsg = msg.Err
-			return m, nil
+			return m, nil, page
 		}
-		return m, utils.SaveTokenCmd(msg.Token)
+		return m, utils.SaveTokenCmd(msg.Token), page
 
 	case utils.SaveTokenMsg:
-		fmt.Println("Token saved")
 		if msg.Err != nil {
 			m.ErrMsg = msg.Err
-			return m, nil
+			return m, nil, page
 		}
-		return m, nil
+		page = AppsPage
+		return m, nil, page
 
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
+			return m, tea.Quit, page
 
 		case tea.KeyEnter:
 			user := utils.UserInputParams{
 				Email:    m.EmailInput.Value(),
 				Password: m.PasswordInput.Value(),
 			}
-			return m, utils.LoginCmd(user)
+			return m, utils.LoginCmd(user), page
 
 		case tea.KeyTab, tea.KeyShiftTab:
 			if m.CurrentIndex == 0 {
@@ -62,5 +61,5 @@ func UpdateLogin(m models.Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return m, tea.Batch(cmds...)
+	return m, tea.Batch(cmds...), page
 }
