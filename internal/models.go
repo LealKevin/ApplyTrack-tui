@@ -1,7 +1,6 @@
 package main
 
 import (
-	"tui-apptrack/internal/misc"
 	"tui-apptrack/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -9,19 +8,16 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// LipGloss styles
+// Lipgloss style
 var (
 	borderStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
+			Border(lipgloss.DoubleBorder()).
 			Padding(1, 2).
 			Align(lipgloss.Center).
-			BorderForeground(lipgloss.Color("63"))
+			BorderForeground(lipgloss.Color("23"))
 
 	centerStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center).
-			Width(50).
-			Height(15).
-			Margin(1, 2)
+			Align(lipgloss.Center, lipgloss.Center)
 )
 
 type Page int
@@ -45,8 +41,8 @@ type AppsModel struct {
 
 type Model struct {
 	User         User
-	windowWidth  int
-	windowHeight int
+	WindowWidth  int
+	WindowHeight int
 
 	CurrentPage Page
 	Login       LoginModel
@@ -95,8 +91,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.User = msg.User
 		}
 	case tea.WindowSizeMsg:
-		m.windowWidth = msg.Width
-		m.windowHeight = msg.Height
+		m.WindowWidth = msg.Width
+		m.WindowHeight = msg.Height
 	}
 
 	switch m.CurrentPage {
@@ -126,6 +122,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "y":
+				m.User.Name = ""
+				m.User.Email = ""
+				m.Login.EmailInput.Placeholder = "Email"
+				m.Login.PasswordInput.Placeholder = "********"
+
 				m.CurrentPage = LoginPage
 				cmd = utils.Logout()
 				return m, cmd
@@ -142,34 +143,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	centerStyle := lipgloss.NewStyle().
-		Width(m.windowWidth).
-		Height(m.windowHeight).
-		Align(lipgloss.Center, lipgloss.Center)
+	centered := centerStyle.Width(m.WindowWidth).Height(m.WindowHeight)
 
+	var content string
 	switch m.CurrentPage {
-	//Login page's style
+
 	case LoginPage:
-		content := misc.Logo + "\n\nEnter your Email and password:\n\n" +
-			m.Login.EmailInput.View() + "\n" +
-			m.Login.PasswordInput.View() + "\n\nPress 'esc' to quit.\n"
+		content = m.ViewLoginPage()
 
-		boxed := borderStyle.Render(content)
-		return centerStyle.Render(boxed)
-
-		//Apps page's style
 	case AppsPage:
-		content := m.User.Name +
-			"\nApps Page:\n\n"
-		boxed := borderStyle.Render(content)
-		return centerStyle.Render(boxed)
+		content = m.ViewAppsPage()
 
 	case LogoutPage:
-		content := m.User.Name +
-			"\nAre you sure to logout?:\n\n" +
-			"Confirm(y) Cancel(n)"
-		boxed := borderStyle.Render(content)
-		return centerStyle.Render(boxed)
+		content = m.ViewLogoutPage()
 	}
-	return ""
+
+	return centered.Render(borderStyle.Render(content))
 }
