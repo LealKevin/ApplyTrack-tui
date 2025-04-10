@@ -14,11 +14,19 @@ var (
 	blurredInputStyle = lipgloss.NewStyle().
 				Border(lipgloss.NormalBorder()).
 				BorderForeground(lipgloss.Color("240"))
+
+	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 )
+
+var ErrMsg string
 
 func (m Model) ViewLoginPage() string {
 	emailStyle := blurredInputStyle
 	passwordStyle := blurredInputStyle
+
+	if m.Login.ErrMsg != nil {
+		ErrMsg = errorStyle.Render("Something went wrong: " + m.Login.ErrMsg.Error())
+	}
 
 	if m.Login.CurrentIndex == 0 {
 		emailStyle = focusedInputStyle
@@ -29,6 +37,7 @@ func (m Model) ViewLoginPage() string {
 	content := misc.Logo + "\n\n" +
 		emailStyle.Render(m.Login.EmailInput.View()) + "\n" +
 		passwordStyle.Render(m.Login.PasswordInput.View()) + "\n\n" +
+		ErrMsg + "\n\n" +
 		"Press 'tab' to switch fields, 'enter' to submit, 'esc' to quit.\n"
 	return content
 }

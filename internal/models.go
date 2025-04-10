@@ -75,10 +75,10 @@ func NewModel() Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	var cmds []tea.Cmd
-	cmds = append(cmds, CheckTokenCmd())
-	cmds = append(cmds, textinput.Blink)
-	return tea.Batch(cmds...)
+	return tea.Batch(
+		CheckTokenCmd(),
+		textinput.Blink,
+	)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -96,8 +96,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch m.CurrentPage {
+
 	case LoginPage:
-		m.Login, cmd, m.CurrentPage = UpdateLogin(m.Login, msg)
+		m, cmd := m.UpdateLogin(msg)
 		return m, cmd
 
 	case AppsPage:

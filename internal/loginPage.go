@@ -6,60 +6,59 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func UpdateLogin(m LoginModel, msg tea.Msg) (LoginModel, tea.Cmd, Page) {
+func (m Model) UpdateLogin(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	var page Page = LoginPage
 
 	switch msg := msg.(type) {
 	case utils.LoginMsg:
 		if msg.Err != nil {
-			m.ErrMsg = msg.Err
-			return m, nil, page
+			m.Login.ErrMsg = msg.Err
+			return m, nil
 		}
-		return m, utils.SaveTokenCmd(msg.Token), page
+		return m, utils.SaveTokenCmd(msg.Token)
 
 	case utils.SaveTokenMsg:
 		if msg.Err != nil {
-			m.ErrMsg = msg.Err
-			return m, nil, page
+			m.Login.ErrMsg = msg.Err
+			return m, nil
 		}
-		page = AppsPage
-		return m, nil, page
+		m.CurrentPage = AppsPage
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit, page
+			return m, tea.Quit
 
 		case tea.KeyEnter:
 			user := utils.UserInputParams{
-				Email:    m.EmailInput.Value(),
-				Password: m.PasswordInput.Value(),
+				Email:    m.Login.EmailInput.Value(),
+				Password: m.Login.PasswordInput.Value(),
 			}
-			return m, utils.LoginCmd(user), page
+			return m, utils.LoginCmd(user)
 
 		case tea.KeyTab, tea.KeyShiftTab:
-			if m.CurrentIndex == 0 {
-				m.EmailInput.Blur()
-				m.PasswordInput.Focus()
-				m.CurrentIndex = 1
+			if m.Login.CurrentIndex == 0 {
+				m.Login.EmailInput.Blur()
+				m.Login.PasswordInput.Focus()
+				m.Login.CurrentIndex = 1
 			} else {
-				m.EmailInput.Focus()
-				m.PasswordInput.Blur()
-				m.CurrentIndex = 0
+				m.Login.EmailInput.Focus()
+				m.Login.PasswordInput.Blur()
+				m.Login.CurrentIndex = 0
 			}
 		}
 
-		if m.CurrentIndex == 0 {
+		if m.Login.CurrentIndex == 0 {
 			var cmd tea.Cmd
-			m.EmailInput, cmd = m.EmailInput.Update(msg)
+			m.Login.EmailInput, cmd = m.Login.EmailInput.Update(msg)
 			cmds = append(cmds, cmd)
 		} else {
 			var cmd tea.Cmd
-			m.PasswordInput, cmd = m.PasswordInput.Update(msg)
+			m.Login.PasswordInput, cmd = m.Login.PasswordInput.Update(msg)
 			cmds = append(cmds, cmd)
 		}
 	}
 
-	return m, tea.Batch(cmds...), page
+	return m, tea.Batch(cmds...)
 }
