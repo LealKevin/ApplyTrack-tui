@@ -31,6 +31,7 @@ func (m Model) UpdateLogin(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case tea.KeyEnter:
+			m.Login.ErrMsg = nil
 			user := utils.UserInputParams{
 				Email:    m.Login.EmailInput.Value(),
 				Password: m.Login.PasswordInput.Value(),

@@ -96,50 +96,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch m.CurrentPage {
-
 	case LoginPage:
-		m, cmd := m.UpdateLogin(msg)
-		return m, cmd
-
+		return m.UpdateLogin(msg)
 	case AppsPage:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.Type {
-			case tea.KeyEsc:
-				return m, tea.Quit
-			case tea.KeyTab:
-				m.CurrentPage = LoginPage
-				return m, cmd
-			}
-			switch msg.String() {
-			case "l":
-				m.CurrentPage = LogoutPage
-				return m, cmd
-			}
-		}
-
+		return m.UpdateAppsPage(msg)
 	case LogoutPage:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "y":
-				m.User.Name = ""
-				m.User.Email = ""
-				m.Login.EmailInput.Placeholder = "Email"
-				m.Login.PasswordInput.Placeholder = "********"
-
-				m.CurrentPage = LoginPage
-				cmd = utils.Logout()
-				return m, cmd
-			case "n":
-				m.CurrentPage = AppsPage
-				return m, cmd
-			}
-		}
+		return m.UpdateLogoutPage(msg)
 	}
-
-	m.Login.EmailInput, cmd = m.Login.EmailInput.Update(msg)
-	m.Login.PasswordInput, _ = m.Login.PasswordInput.Update(msg)
 	return m, cmd
 }
 
