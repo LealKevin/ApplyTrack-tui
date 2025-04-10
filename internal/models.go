@@ -50,27 +50,10 @@ type Model struct {
 }
 
 func NewModel() Model {
-	emailInput := textinput.New()
-	emailInput.Placeholder = "Email"
-	emailInput.Focus()
-	emailInput.CharLimit = 100
-	emailInput.Width = 30
-
-	passwordInput := textinput.New()
-	passwordInput.Placeholder = "********"
-	passwordInput.CharLimit = 100
-	passwordInput.Width = 30
-	passwordInput.EchoMode = textinput.EchoPassword
-	passwordInput.EchoCharacter = '*'
 
 	return Model{
 		CurrentPage: LoginPage,
-		Login: LoginModel{
-			EmailInput:    emailInput,
-			PasswordInput: passwordInput,
-			CurrentIndex:  0,
-			ErrMsg:        nil,
-		},
+		Login:       NewLoginModel(),
 	}
 }
 
