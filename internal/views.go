@@ -1,9 +1,11 @@
 package main
 
 import (
-	"tui-apptrack/internal/misc"
-
+	"fmt"
 	"github.com/charmbracelet/lipgloss"
+	t "github.com/evertras/bubble-table/table"
+	"tui-apptrack/internal/misc"
+	"tui-apptrack/utils"
 )
 
 var (
@@ -50,9 +52,40 @@ func (m Model) ViewLogoutPage() string {
 }
 
 func (m Model) ViewAppsPage() string {
-	content := m.User.Name +
-		"\nApps Page:\n\n"
+
+	content := ""
+
+	if m.Apps.Err != nil {
+		content += "Error: " + m.Apps.Err.Error() + "\n"
+	}
+
+	content = m.User.Name +
+		"\nApps Page:\n\n" + m.Apps.table.View() +
+		fmt.Sprintf("\n\nSelected App ID: %d", m.Apps.Temp.ID)
 
 	return content
 
+}
+
+func MakeAppRow(app utils.App) t.Row {
+	var statusColor string
+
+	switch app.Status {
+	case "sent":
+		statusColor = "34"
+	case "pending":
+		statusColor = "228"
+	case "rejected":
+		statusColor = "196"
+	default:
+		statusColor = "7"
+	}
+
+	return t.NewRow(t.RowData{
+		"id":      app.ID,
+		"title":   app.TitleApplication,
+		"company": app.Company,
+		"status":  t.NewStyledCell(app.Status, lipgloss.NewStyle().Foreground(lipgloss.Color(statusColor))),
+		"sent":    app.SentDate,
+	})
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 )
 
 // Lipgloss style
@@ -36,7 +37,10 @@ type LoginModel struct {
 }
 
 type AppsModel struct {
-	Apps []utils.App
+	Apps  []utils.App
+	table table.Model
+	Err   error
+	Temp  utils.App
 }
 
 type Model struct {
@@ -54,6 +58,7 @@ func NewModel() Model {
 	return Model{
 		CurrentPage: LoginPage,
 		Login:       NewLoginModel(),
+		Apps:        NewAppsModel(),
 	}
 }
 
@@ -71,7 +76,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case CheckTokenMsg:
 		if msg.Err == nil {
 			m.CurrentPage = AppsPage
-			m.User = msg.User
+			m.User.Name = msg.User.Name
 		}
 	case tea.WindowSizeMsg:
 		m.WindowWidth = msg.Width

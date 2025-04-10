@@ -15,6 +15,7 @@ func (m Model) UpdateLogin(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Login.ErrMsg = msg.Err
 			return m, nil
 		}
+		m.User.Name = msg.Name
 		return m, utils.SaveTokenCmd(msg.Token)
 
 	case utils.SaveTokenMsg:
@@ -23,7 +24,7 @@ func (m Model) UpdateLogin(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.CurrentPage = AppsPage
-		return m, nil
+		return m, utils.FetchAppsCmd()
 
 	case tea.KeyMsg:
 		switch msg.Type {
