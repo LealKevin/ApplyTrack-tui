@@ -8,6 +8,17 @@ import (
 	"github.com/evertras/bubble-table/table"
 )
 
+func (a AppsModel) filterRows(status string) []table.Row {
+	var rows []table.Row
+
+	for _, app := range a.Apps {
+		if status == "all" || app.Status == status {
+			rows = append(rows, MakeAppRow(app))
+		}
+	}
+	return rows
+}
+
 func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -18,11 +29,9 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Apps.Err = msg.Err
 			return m, nil
 		}
-		var rows []table.Row
-		for _, app := range msg.Apps {
-			rows = append(rows, MakeAppRow(app))
-		}
-		m.Apps.table = m.Apps.table.WithRows(rows)
+		m.Apps.Apps = msg.Apps
+		filtered := m.Apps.filterRows("all")
+		m.Apps.table = m.Apps.table.WithRows(filtered)
 
 		m.Apps.Apps = msg.Apps
 		return m, nil
@@ -41,7 +50,7 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			id, ok := row.Data["id"].(int32)
 			if !ok {
-				fmt.Println("Error: casting ID:%v", row)
+				fmt.Printf("Error: casting ID:%v", row)
 				return m, nil
 			}
 
@@ -53,6 +62,22 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "0":
+			filtered := m.Apps.filterRows("all")
+			m.Apps.table = m.Apps.table.WithRows(filtered)
+			return m, nil
+		case "1":
+			filtered := m.Apps.filterRows("sent")
+			m.Apps.table = m.Apps.table.WithRows(filtered)
+			return m, nil
+		case "2":
+			filtered := m.Apps.filterRows("pending")
+			m.Apps.table = m.Apps.table.WithRows(filtered)
+			return m, nil
+		case "3":
+			filtered := m.Apps.filterRows("rejected")
+			m.Apps.table = m.Apps.table.WithRows(filtered)
+			return m, nil
 		case "r":
 			return m, utils.FetchAppsCmd()
 		case "esc":
