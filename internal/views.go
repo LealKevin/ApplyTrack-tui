@@ -64,9 +64,7 @@ func (m Model) ViewAppsPage() string {
 	content =
 		m.Apps.table.View() +
 			"\n" + greyStyle.Render("Filter by status: all(1) sent(2) pending(3) rejected(4)\n")
-
 	return content
-
 }
 
 func MakeAppRow(app utils.App) t.Row {

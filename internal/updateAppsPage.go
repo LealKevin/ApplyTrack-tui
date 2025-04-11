@@ -62,6 +62,9 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "n":
+			m.CurrentPage = CreateAppPage
+			return m, nil
 		case "0":
 			filtered := m.Apps.filterRows("all")
 			m.Apps.table = m.Apps.table.WithRows(filtered)

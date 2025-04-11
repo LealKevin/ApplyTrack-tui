@@ -26,6 +26,7 @@ const (
 	LoginPage Page = iota
 	LogoutPage
 	AppsPage
+	CreateAppPage
 )
 
 type LoginModel struct {
@@ -50,6 +51,7 @@ type Model struct {
 	CurrentPage Page
 	Login       LoginModel
 	Apps        AppsModel
+	CreateApp   CreateAppModel
 }
 
 func NewModel() Model {
@@ -58,6 +60,7 @@ func NewModel() Model {
 		CurrentPage: LoginPage,
 		Login:       NewLoginModel(),
 		Apps:        NewAppsModel(),
+		CreateApp:   NewCreateAppModel(),
 	}
 }
 
@@ -89,6 +92,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdateAppsPage(msg)
 	case LogoutPage:
 		return m.UpdateLogoutPage(msg)
+	case CreateAppPage:
+		return m.UpdateCreateApp(msg)
 	}
 	return m, cmd
 }
@@ -107,6 +112,8 @@ func (m Model) View() string {
 
 	case LogoutPage:
 		content = m.ViewLogoutPage()
+	case CreateAppPage:
+		content = m.ViewCreateAppPage()
 	}
 
 	return centered.Render(borderStyle.Render(content))
