@@ -27,26 +27,31 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[title].Focus()
 	inputs[title].CharLimit = 156
 	inputs[title].Width = 20
+	inputs[title].Prompt = ""
 
 	inputs[company] = textinput.New()
 	inputs[company].Placeholder = "Company"
 	inputs[company].CharLimit = 156
 	inputs[company].Width = 20
+	inputs[company].Prompt = ""
 
 	inputs[status] = textinput.New()
 	inputs[status].Placeholder = "Status"
 	inputs[status].CharLimit = 20
 	inputs[status].Width = 20
+	inputs[status].Prompt = ""
 
 	inputs[sentDate] = textinput.New()
 	inputs[sentDate].Placeholder = "Sent Date"
 	inputs[sentDate].CharLimit = 20
 	inputs[sentDate].Width = 20
+	inputs[sentDate].Prompt = ""
 
 	inputs[url] = textinput.New()
 	inputs[url].Placeholder = "URL"
 	inputs[url].CharLimit = 200
 	inputs[url].Width = 20
+	inputs[url].Prompt = ""
 
 	return CreateAppModel{
 		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[status], inputs[sentDate], inputs[url]},
@@ -94,13 +99,16 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) ViewCreateAppPage() string {
-	content := "\n\n" +
-		m.CreateApp.inputs[title].View() + "\n" +
-		m.CreateApp.inputs[company].View() + "\n" +
-		m.CreateApp.inputs[sentDate].View() + "\n" +
-		m.CreateApp.inputs[status].View() + "\n" +
-		m.CreateApp.inputs[url].View() + "\n" +
-		"\n\n" +
-		"Press 'tab' to switch fields, 'enter' to submit, 'esc' to quit.\n"
+	content :=
+		"Create new application" +
+			"\n\n" +
+			m.CreateApp.inputs[title].View() + "\n" +
+			m.CreateApp.inputs[company].View() + "\n" +
+			m.CreateApp.inputs[sentDate].View() + "\n" +
+			m.CreateApp.inputs[status].View() + "\n" +
+			m.CreateApp.inputs[url].View() + "\n" +
+			"\n\n\n\n" +
+			GreyStyle.Render("↓(Tab) ↑(Shift + Tab) ") +
+			GreyStyle.Render("Submit(enter) Cancel(esc).\n")
 	return content
 }

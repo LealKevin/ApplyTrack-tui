@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	greyStyle = lipgloss.NewStyle().
+	GreyStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240"))
 
 	focusedInputStyle = lipgloss.NewStyle().
@@ -63,7 +63,7 @@ func (m Model) ViewAppsPage() string {
 
 	content =
 		m.Apps.table.View() +
-			"\n" + greyStyle.Render("Filter by status: all(1) sent(2) pending(3) rejected(4)\n")
+			"\n" + GreyStyle.Render("Filter by status: all(1) sent(2) pending(3) rejected(4)\n")
 	return content
 }
 

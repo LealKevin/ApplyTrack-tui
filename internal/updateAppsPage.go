@@ -65,19 +65,19 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "n":
 			m.CurrentPage = CreateAppPage
 			return m, nil
-		case "0":
+		case "1":
 			filtered := m.Apps.filterRows("all")
 			m.Apps.table = m.Apps.table.WithRows(filtered)
 			return m, nil
-		case "1":
+		case "2":
 			filtered := m.Apps.filterRows("sent")
 			m.Apps.table = m.Apps.table.WithRows(filtered)
 			return m, nil
-		case "2":
+		case "3":
 			filtered := m.Apps.filterRows("pending")
 			m.Apps.table = m.Apps.table.WithRows(filtered)
 			return m, nil
-		case "3":
+		case "4":
 			filtered := m.Apps.filterRows("rejected")
 			m.Apps.table = m.Apps.table.WithRows(filtered)
 			return m, nil
