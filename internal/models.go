@@ -12,7 +12,6 @@ import (
 // Lipgloss style
 var (
 	borderStyle = lipgloss.NewStyle().
-			Border(lipgloss.DoubleBorder()).
 			Padding(1, 2).
 			Align(lipgloss.Center).
 			BorderForeground(lipgloss.Color("23"))

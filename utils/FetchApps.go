@@ -31,7 +31,6 @@ type FetchAppsMsg struct {
 
 func FetchAppsCmd() tea.Cmd {
 	return func() tea.Msg {
-		fmt.Println(">>> FetchAppsCmd executed")
 
 		tokenBytes, err := os.ReadFile(".token")
 		if err != nil {

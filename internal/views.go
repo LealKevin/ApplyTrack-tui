@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/charmbracelet/lipgloss"
 	t "github.com/evertras/bubble-table/table"
 	"tui-apptrack/internal/misc"
@@ -9,9 +8,12 @@ import (
 )
 
 var (
+	greyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
+
 	focusedInputStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("205"))
+				BorderForeground(lipgloss.Color("#dcc394"))
 
 	blurredInputStyle = lipgloss.NewStyle().
 				Border(lipgloss.NormalBorder()).
@@ -59,9 +61,9 @@ func (m Model) ViewAppsPage() string {
 		content += "Error: " + m.Apps.Err.Error() + "\n"
 	}
 
-	content = m.User.Name +
-		"\nApps Page:\n\n" + m.Apps.table.View() +
-		fmt.Sprintf("\n\nSelected App ID: %d", m.Apps.Temp.ID)
+	content =
+		m.Apps.table.View() +
+			"\n" + greyStyle.Render("Filter by status: all(1) sent(2) pending(3) rejected(4)\n")
 
 	return content
 
@@ -72,11 +74,11 @@ func MakeAppRow(app utils.App) t.Row {
 
 	switch app.Status {
 	case "sent":
-		statusColor = "34"
+		statusColor = "#8a943e"
 	case "pending":
-		statusColor = "228"
+		statusColor = "#de935f"
 	case "rejected":
-		statusColor = "196"
+		statusColor = "#a54241"
 	default:
 		statusColor = "7"
 	}

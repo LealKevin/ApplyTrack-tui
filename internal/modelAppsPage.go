@@ -9,6 +9,10 @@ func NewAppsModel() AppsModel {
 
 	leftAlign := lipgloss.NewStyle().Align(lipgloss.Left)
 
+	baseStyle := lipgloss.NewStyle().
+		BorderForeground(lipgloss.Color("#dcc394")).
+		Foreground(lipgloss.Color("#c6c8c5"))
+
 	columns := []table.Column{
 		table.NewColumn("title", "Title", 20).WithStyle(leftAlign),
 		table.NewColumn("company", "Company", 20).WithStyle(leftAlign),
@@ -22,10 +26,11 @@ func NewAppsModel() AppsModel {
 		Focused(true)
 
 	t = t.BorderRounded()
+	t = t.WithBaseStyle(baseStyle)
 
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("5"))
+		Foreground(lipgloss.Color("#b293bb"))
 
 	t = t.HeaderStyle(headerStyle)
 
