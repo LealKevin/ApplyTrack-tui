@@ -14,8 +14,8 @@ func NewAppsModel() AppsModel {
 		Foreground(lipgloss.Color("#c6c8c5"))
 
 	columns := []table.Column{
-		table.NewColumn("title", "Title", 20).WithStyle(leftAlign),
-		table.NewColumn("company", "Company", 20).WithStyle(leftAlign),
+		table.NewColumn("title", "Title", 20).WithStyle(leftAlign).WithFiltered(true),
+		table.NewColumn("company", "Company", 20).WithStyle(leftAlign).WithFiltered(true),
 		table.NewColumn("status", "Status", 10).WithStyle(leftAlign),
 		table.NewColumn("sent", "Sent", 12).WithStyle(leftAlign),
 	}
@@ -23,7 +23,8 @@ func NewAppsModel() AppsModel {
 	t := table.New(columns).
 		WithTargetWidth(80).
 		WithPageSize(10).
-		Focused(true)
+		Focused(true).
+		Filtered(true)
 
 	t = t.BorderRounded()
 	t = t.WithBaseStyle(baseStyle)

@@ -20,7 +20,6 @@ func (a AppsModel) filterRows(status string) []table.Row {
 }
 
 func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -32,28 +31,43 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Apps.Apps = msg.Apps
 		filtered := m.Apps.filterRows("all")
 		m.Apps.table = m.Apps.table.WithRows(filtered)
-
-		m.Apps.Apps = msg.Apps
 		return m, nil
 
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "/":
+			m.Apps.isFiltering = true
+			m.Apps.table, cmd = m.Apps.table.Update(msg)
+			return m, cmd
+		case "esc", "enter":
+			if m.Apps.isFiltering {
+				m.Apps.isFiltering = false
+				m.Apps.table, cmd = m.Apps.table.Update(msg)
+				return m, cmd
+			}
+		}
+
+		if m.Apps.isFiltering {
+			m.Apps.table, cmd = m.Apps.table.Update(msg)
+			return m, cmd
+		}
+
 		switch msg.Type {
-		case tea.KeyEsc:
+		case tea.KeyCtrlC:
 			return m, tea.Quit
 		case tea.KeyTab:
 			m.CurrentPage = LoginPage
 			return m, nil
 		}
+
 		switch msg.String() {
 		case "e":
 			row := m.Apps.table.HighlightedRow()
-
 			id, ok := row.Data["id"].(int32)
 			if !ok {
 				fmt.Printf("Error: casting ID:%v", row)
 				return m, nil
 			}
-
 			for _, app := range m.Apps.Apps {
 				if app.ID == id {
 					m.Apps.Temp = app
@@ -61,7 +75,6 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			return m, nil
-
 		case "n":
 			m.CurrentPage = CreateAppPage
 			return m, nil
@@ -83,10 +96,9 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "r":
 			return m, utils.FetchAppsCmd()
-		case "esc":
-			return m, tea.Quit
 		case "l":
 			m.CurrentPage = LogoutPage
+			return m, nil
 		default:
 			m.Apps.table, cmd = m.Apps.table.Update(msg)
 			return m, cmd
@@ -97,5 +109,5 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, utils.FetchAppsCmd()
 	}
 
-	return m, tea.Batch(cmds...)
+	return m, tea.Batch()
 }

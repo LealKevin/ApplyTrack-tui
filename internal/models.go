@@ -37,10 +37,11 @@ type LoginModel struct {
 }
 
 type AppsModel struct {
-	Apps  []utils.App
-	table table.Model
-	Err   error
-	Temp  utils.App
+	Apps        []utils.App
+	table       table.Model
+	Err         error
+	isFiltering bool
+	Temp        utils.App
 }
 
 type Model struct {
