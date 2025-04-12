@@ -1,6 +1,8 @@
 package main
 
 import (
+	"tui-apptrack/utils"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -9,6 +11,7 @@ type CreateAppModel struct {
 	inputs       []textinput.Model
 	CurrentIndex int
 	ErrMsg       error
+	isConfirm    bool
 }
 
 const (
@@ -57,6 +60,7 @@ func NewCreateAppModel() CreateAppModel {
 		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[status], inputs[sentDate], inputs[url]},
 		CurrentIndex: 0,
 		ErrMsg:       nil,
+		isConfirm:    false,
 	}
 }
 
@@ -67,6 +71,10 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
+			if m.CreateApp.isConfirm {
+				m.CreateApp.isConfirm = false
+				return m, nil
+			}
 			m.CurrentPage = AppsPage
 			return m, nil
 		case tea.KeyTab:
@@ -82,7 +90,23 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.CreateApp.CurrentIndex--
 			}
 
+		case tea.KeyEnter:
+			if !m.CreateApp.isConfirm {
+				m.CreateApp.isConfirm = true
+				return m, nil
+			}
+
+			if m.CreateApp.isConfirm {
+				m.CreateApp.isConfirm = false
+				app := m.parseApp()
+				cmd := utils.CreateApp(app)
+
+				return m, cmd
+
+			}
+
 		}
+
 		for i := range m.CreateApp.inputs {
 			m.CreateApp.inputs[i].Blur()
 		}
@@ -99,6 +123,10 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) ViewCreateAppPage() string {
+	confirm := ""
+	if m.CreateApp.isConfirm {
+		confirm = "Confirm to create app"
+	}
 	content :=
 		"Create new application" +
 			"\n\n" +
@@ -109,6 +137,16 @@ func (m Model) ViewCreateAppPage() string {
 			m.CreateApp.inputs[url].View() + "\n" +
 			"\n\n\n\n" +
 			GreyStyle.Render("↓(Tab) ↑(Shift + Tab) ") +
-			GreyStyle.Render("Submit(enter) Cancel(esc).\n")
+			GreyStyle.Render("Submit(enter) Cancel(esc).\n") + confirm
 	return content
+}
+
+func (m Model) parseApp() utils.CreateAppRequest {
+	return utils.CreateAppRequest{
+		TitleApplication: m.CreateApp.inputs[title].Value(),
+		Company:          m.CreateApp.inputs[company].Value(),
+		SentDate:         m.CreateApp.inputs[sentDate].Value(),
+		Status:           m.CreateApp.inputs[status].Value(),
+		UrlApplication:   m.CreateApp.inputs[url].Value(),
+	}
 }

@@ -29,6 +29,8 @@ type FetchAppsMsg struct {
 	Err  error
 }
 
+const url string = "http://localhost:8080/api/"
+
 func FetchAppsCmd() tea.Cmd {
 	return func() tea.Msg {
 
@@ -39,7 +41,7 @@ func FetchAppsCmd() tea.Cmd {
 		}
 		token := string(tokenBytes)
 
-		req, err := http.NewRequest("GET", "http://localhost:8080/api/applications?status=all", nil)
+		req, err := http.NewRequest("GET", url+"applications?status=all", nil)
 		if err != nil {
 			fmt.Printf("Error creating request: %v\n", err)
 			return FetchAppsMsg{Apps: nil, Err: fmt.Errorf("Unable to create a request, error: %v", err)}
@@ -74,6 +76,57 @@ func FetchAppsCmd() tea.Cmd {
 			return FetchAppsMsg{Apps: nil, Err: fmt.Errorf("Unable to decode response, error: %v", err)}
 		}
 		return FetchAppsMsg{Apps: apps, Err: nil}
+	}
+}
+
+type CreateAppMsg struct {
+	App App
+	Err error
+}
+
+type CreateAppRequest struct {
+	TitleApplication string `json:"title_application"`
+	Company          string `json:"company"`
+	SentDate         string `json:"sent_date"`
+	Status           string `json:"status"`
+	UrlApplication   string `json:"url_application"`
+}
+
+func CreateApp(app CreateAppRequest) tea.Cmd {
+	fmt.Printf("Here: %v ", app)
+	return func() tea.Msg {
+
+		jsonApp, err := json.Marshal(app)
+		if err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("Unable to encode user to json: %v", err)}
+		}
+
+		req, err := http.NewRequest("POST", url+"application", bytes.NewBuffer(jsonApp))
+		if err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("Unable to create request: %v", err)}
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("Unable to send request: %v", err)}
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return CreateAppMsg{Err: fmt.Errorf("Server returned status %s", resp.Status)}
+		}
+
+		var respApp App
+
+		if err := json.NewDecoder(resp.Body).Decode(&respApp); err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("Unable to decode json: %v", err)}
+		}
+
+		return CreateAppMsg{App: respApp, Err: nil}
 	}
 }
 
@@ -122,7 +175,7 @@ func LoginCmd(user UserInputParams) tea.Cmd {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return LoginMsg{Token: "", Err: fmt.Errorf("server returned status %s", resp.Status)}
+			return LoginMsg{Token: "", Err: fmt.Errorf("Server returned status %s", resp.Status)}
 		}
 		var user UserOutputParams
 		if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
