@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"tui-apptrack/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -17,13 +18,15 @@ type CreateAppModel struct {
 const (
 	title = iota
 	company
-	sentDate
+	year
+	month
+	day
 	status
 	url
 )
 
 func NewCreateAppModel() CreateAppModel {
-	inputs := make([]textinput.Model, 5)
+	inputs := make([]textinput.Model, 7)
 
 	inputs[title] = textinput.New()
 	inputs[title].Placeholder = "Title"
@@ -38,14 +41,28 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[company].Width = 20
 	inputs[company].Prompt = ""
 
-	inputs[sentDate] = textinput.New()
-	inputs[sentDate].Placeholder = "Sent Date"
-	inputs[sentDate].CharLimit = 20
-	inputs[sentDate].Width = 20
-	inputs[sentDate].Prompt = ""
+	inputs[year] = textinput.New()
+	inputs[year].Placeholder = "YYYY"
+	inputs[year].CharLimit = 4
+	inputs[year].Width = 4
+	inputs[year].Prompt = ""
+
+	inputs[month] = textinput.New()
+	inputs[month].Placeholder = "MM"
+	inputs[month].CharLimit = 2
+	inputs[month].Width = 2
+	inputs[month].Prompt = ""
+
+	inputs[day] = textinput.New()
+	inputs[day].Placeholder = "DD"
+	inputs[day].CharLimit = 2
+	inputs[day].Width = 2
+	inputs[day].Prompt = ""
 
 	inputs[status] = textinput.New()
 	inputs[status].Placeholder = "Status"
+	inputs[status].SetSuggestions([]string{"sent", "pending", "rejected"})
+	inputs[status].ShowSuggestions = true
 	inputs[status].CharLimit = 20
 	inputs[status].Width = 20
 	inputs[status].Prompt = ""
@@ -57,7 +74,7 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[url].Prompt = ""
 
 	return CreateAppModel{
-		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[sentDate], inputs[status], inputs[url]},
+		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[year], inputs[month], inputs[day], inputs[status], inputs[url]},
 		CurrentIndex: 0,
 		ErrMsg:       nil,
 		isConfirm:    false,
@@ -149,7 +166,7 @@ func (m Model) ViewCreateAppPage() string {
 			"\n\n" +
 			m.CreateApp.inputs[title].View() + "\n" +
 			m.CreateApp.inputs[company].View() + "\n" +
-			m.CreateApp.inputs[sentDate].View() + "\n" +
+			m.CreateApp.inputs[year].View() + "/ " + m.CreateApp.inputs[month].View() + "/ " + m.CreateApp.inputs[day].View() + "\n" +
 			m.CreateApp.inputs[status].View() + "\n" +
 			m.CreateApp.inputs[url].View() + "\n" +
 			"\n\n\n\n" +
@@ -160,12 +177,18 @@ func (m Model) ViewCreateAppPage() string {
 }
 
 func (m Model) parseApp() utils.CreateAppRequest {
+	date := joinDate(m.CreateApp.inputs[year].Value(), m.CreateApp.inputs[month].Value(), m.CreateApp.inputs[day].Value())
 
 	return utils.CreateAppRequest{
 		TitleApplication: m.CreateApp.inputs[title].Value(),
 		Company:          m.CreateApp.inputs[company].Value(),
-		SentDate:         m.CreateApp.inputs[sentDate].Value(),
+		SentDate:         date,
 		Status:           m.CreateApp.inputs[status].Value(),
 		UrlApplication:   m.CreateApp.inputs[url].Value(),
 	}
+}
+
+func joinDate(year, month, day string) string {
+	return fmt.Sprintf(year + month + day)
+
 }
