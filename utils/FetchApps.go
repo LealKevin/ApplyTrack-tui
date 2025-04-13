@@ -36,7 +36,6 @@ func FetchAppsCmd() tea.Cmd {
 
 		tokenBytes, err := os.ReadFile(".token")
 		if err != nil {
-			fmt.Printf("Error reading token: %v\n", err)
 			return FetchAppsMsg{Apps: nil, Err: fmt.Errorf("unable to read token: %v", err)}
 		}
 		token := string(tokenBytes)
@@ -80,12 +79,13 @@ func FetchAppsCmd() tea.Cmd {
 }
 
 type CreateAppMsg struct {
-	App App
-	Err error
+	App     App
+	Err     error
+	Created bool
 }
 
 type CreateAppRequest struct {
-	TitleApplication string `json:"title_application"`
+	TitleApplication string `json:"title"`
 	Company          string `json:"company"`
 	SentDate         string `json:"sent_date"`
 	Status           string `json:"status"`
@@ -93,12 +93,17 @@ type CreateAppRequest struct {
 }
 
 func CreateApp(app CreateAppRequest) tea.Cmd {
-	fmt.Printf("Here: %v ", app)
+	fmt.Printf("Sent date: %v, Status: %v ", app.SentDate, app.Status)
 	return func() tea.Msg {
 
+		tokenBytes, err := os.ReadFile(".token")
+		if err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("To read token file: %v", err)}
+		}
+		token := string(tokenBytes)
 		jsonApp, err := json.Marshal(app)
 		if err != nil {
-			return CreateAppMsg{Err: fmt.Errorf("Unable to encode user to json: %v", err)}
+			return CreateAppMsg{Err: fmt.Errorf("Unable to encode app to json: %v", err)}
 		}
 
 		req, err := http.NewRequest("POST", url+"application", bytes.NewBuffer(jsonApp))
@@ -106,27 +111,27 @@ func CreateApp(app CreateAppRequest) tea.Cmd {
 			return CreateAppMsg{Err: fmt.Errorf("Unable to create request: %v", err)}
 		}
 
+		req.AddCookie(&http.Cookie{
+			Name:  "jwt",
+			Value: token,
+		})
+
 		req.Header.Set("Content-Type", "application/json")
-
 		client := &http.Client{}
-
 		resp, err := client.Do(req)
 		if err != nil {
 			return CreateAppMsg{Err: fmt.Errorf("Unable to send request: %v", err)}
 		}
 		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 			return CreateAppMsg{Err: fmt.Errorf("Server returned status %s", resp.Status)}
 		}
 
 		var respApp App
-
 		if err := json.NewDecoder(resp.Body).Decode(&respApp); err != nil {
 			return CreateAppMsg{Err: fmt.Errorf("Unable to decode json: %v", err)}
 		}
-
-		return CreateAppMsg{App: respApp, Err: nil}
+		return CreateAppMsg{App: respApp, Err: nil, Created: true}
 	}
 }
 

@@ -104,13 +104,10 @@ func (m Model) View() string {
 
 	var content string
 	switch m.CurrentPage {
-
 	case LoginPage:
 		content = m.ViewLoginPage()
-
 	case AppsPage:
 		content = m.ViewAppsPage()
-
 	case LogoutPage:
 		content = m.ViewLogoutPage()
 	case CreateAppPage:

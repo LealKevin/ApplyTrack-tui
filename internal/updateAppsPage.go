@@ -56,7 +56,10 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC:
 			return m, tea.Quit
 		case tea.KeyTab:
-			m.CurrentPage = LoginPage
+			m.Apps.table = m.Apps.table.PageDown()
+			return m, nil
+		case tea.KeyShiftTab:
+			m.Apps.table = m.Apps.table.PageUp()
 			return m, nil
 		}
 
