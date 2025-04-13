@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type CreateAppModel struct {
@@ -151,6 +152,8 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) ViewCreateAppPage() string {
+	alignCenter := lipgloss.NewStyle()
+	alignCenter.AlignHorizontal(lipgloss.Center)
 	confirm := ""
 	if m.CreateApp.isConfirm {
 		confirm = "Confirm to create app"
@@ -171,8 +174,12 @@ func (m Model) ViewCreateAppPage() string {
 			m.CreateApp.inputs[url].View() + "\n" +
 			"\n\n\n\n" +
 			GreyStyle.Render("↓(Tab) ↑(Shift + Tab) ") +
-			err +
-			GreyStyle.Render("Submit(enter) Cancel(esc).\n") + confirm
+			GreyStyle.Render("Submit(enter) Cancel(esc).\n\n") +
+			err
+
+	if confirm != "" {
+		content += "\n" + alignCenter.Render(confirm) + "\n"
+	}
 	return content
 }
 
