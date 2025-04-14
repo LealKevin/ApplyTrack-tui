@@ -84,5 +84,6 @@ func MakeAppRow(app utils.App) t.Row {
 		"company": app.Company,
 		"status":  t.NewStyledCell(app.Status, lipgloss.NewStyle().Foreground(lipgloss.Color(statusColor))),
 		"sent":    app.SentDate,
+		"url":     app.UrlApplication,
 	})
 }

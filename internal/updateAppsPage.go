@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evertras/bubble-table/table"
+	"github.com/pkg/browser"
 )
 
 func (a AppsModel) filterRows(status string) []table.Row {
@@ -69,6 +70,28 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
+		case "v":
+			row := m.Apps.table.HighlightedRow()
+			rawURL, ok := row.Data["url"]
+			if !ok {
+				fmt.Println("Error: URL not found")
+				return m, nil
+			}
+
+			urlStr, ok := rawURL.(string)
+			if !ok || urlStr == "" {
+				m.Alerts = "⚠️ No valid URL to open."
+				return m, nil
+			}
+
+			err := browser.OpenURL(urlStr)
+			if err != nil {
+				m.Alerts = "❌ Failed to open URL."
+			} else {
+				m.Alerts = "🌐 Opening URL in your browser..."
+			}
+			return m, nil
+
 		case "e":
 			row := m.Apps.table.HighlightedRow()
 			id, ok := row.Data["id"].(int32)
