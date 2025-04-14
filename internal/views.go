@@ -54,16 +54,13 @@ func (m Model) ViewLogoutPage() string {
 }
 
 func (m Model) ViewAppsPage() string {
-
 	content := ""
-
 	if m.Apps.Err != nil {
 		content += "Error: " + m.Apps.Err.Error() + "\n"
 	}
 
 	content +=
-		m.Apps.table.View() +
-			"\n" + GreyStyle.Render("Filter by status: all(1) sent(2) pending(3) rejected(4)\n")
+		m.Apps.table.View()
 	return content
 }
 

@@ -14,15 +14,16 @@ type CreateAppModel struct {
 	CurrentIndex int
 	ErrMsg       error
 	isConfirm    bool
+	focused      bool
 }
 
 const (
 	title = iota
 	company
+	status
 	year
 	month
 	day
-	status
 	url
 )
 
@@ -33,7 +34,7 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[title].Placeholder = "Title"
 	inputs[title].Focus()
 	inputs[title].CharLimit = 156
-	inputs[title].Width = 20
+	inputs[title].Width = 35
 	inputs[title].Prompt = ""
 
 	inputs[company] = textinput.New()
@@ -75,10 +76,11 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[url].Prompt = ""
 
 	return CreateAppModel{
-		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[year], inputs[month], inputs[day], inputs[status], inputs[url]},
+		inputs:       []textinput.Model{inputs[title], inputs[company], inputs[status], inputs[year], inputs[month], inputs[day], inputs[url]},
 		CurrentIndex: 0,
 		ErrMsg:       nil,
 		isConfirm:    false,
+		focused:      false,
 	}
 }
 
@@ -86,7 +88,6 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	case utils.CreateAppMsg:
 		if msg.Err != nil {
 			m.CreateApp.ErrMsg = msg.Err
@@ -94,10 +95,15 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.Created {
-			m.CurrentPage = AppsPage
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+			m.CreateApp.focused = false
+			m.Apps.table.Focused(true)
+
+			for i, _ := range m.CreateApp.inputs {
+				m.CreateApp.inputs[i].Reset()
+			}
 			return m, utils.FetchAppsCmd()
 		}
-
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -105,7 +111,9 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.CreateApp.isConfirm = false
 				return m, nil
 			}
-			m.CurrentPage = AppsPage
+			m.CreateApp.focused = false
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+			m.Apps.table.Focused(true)
 			return m, nil
 
 		case tea.KeyTab:
@@ -130,6 +138,7 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.CreateApp.isConfirm {
 				m.CreateApp.isConfirm = false
+				m.Apps.table.Focused(true)
 				app := m.parseApp()
 				cmd := utils.CreateApp(app)
 
@@ -147,11 +156,22 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
 		cmds = append(cmds, cmd)
 	}
-
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) ViewCreateAppPage() string {
+func (m Model) ViewCreateAppPage2() string {
+	notFocused := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		Width(93).
+		BorderForeground(lipgloss.Color("240")).
+		Padding(0)
+
+	focused := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		Width(93).
+		BorderForeground(lipgloss.Color("#dcc394")).
+		Padding(0)
+
 	alignCenter := lipgloss.NewStyle()
 	alignCenter.AlignHorizontal(lipgloss.Center)
 	confirm := ""
@@ -165,22 +185,22 @@ func (m Model) ViewCreateAppPage() string {
 
 	}
 	content :=
-		"Create new application" +
-			"\n\n" +
-			m.CreateApp.inputs[title].View() + "\n" +
-			m.CreateApp.inputs[company].View() + "\n" +
+		m.CreateApp.inputs[title].View() +
+			m.CreateApp.inputs[company].View() +
+			m.CreateApp.inputs[status].View() +
 			m.CreateApp.inputs[year].View() + "/ " + m.CreateApp.inputs[month].View() + "/ " + m.CreateApp.inputs[day].View() + "\n" +
-			m.CreateApp.inputs[status].View() + "\n" +
 			m.CreateApp.inputs[url].View() + "\n" +
-			"\n\n\n\n" +
-			GreyStyle.Render("↓(Tab) ↑(Shift + Tab) ") +
-			GreyStyle.Render("Submit(enter) Cancel(esc).\n\n") +
 			err
 
 	if confirm != "" {
 		content += "\n" + alignCenter.Render(confirm) + "\n"
 	}
-	return content
+
+	if m.CreateApp.focused {
+		return focused.Render(content)
+	} else {
+		return notFocused.Render(content)
+	}
 }
 
 func (m Model) parseApp() utils.CreateAppRequest {
@@ -196,6 +216,6 @@ func (m Model) parseApp() utils.CreateAppRequest {
 }
 
 func joinDate(year, month, day string) string {
-	return fmt.Sprintf(year + month + day)
+	return fmt.Sprintf(year + "-" + month + "-" + day)
 
 }

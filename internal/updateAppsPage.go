@@ -22,6 +22,10 @@ func (a AppsModel) filterRows(status string) []table.Row {
 func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	if m.CreateApp.focused {
+		return m.UpdateCreateApp(msg)
+	}
+
 	switch msg := msg.(type) {
 	case utils.FetchAppsMsg:
 		if msg.Err != nil {
@@ -79,7 +83,9 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "n":
-			m.CurrentPage = CreateAppPage
+			m.CreateApp.focused = true
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableBlured)
+			m.Apps.table.Focused(false)
 			return m, nil
 		case "1":
 			filtered := m.Apps.filterRows("all")

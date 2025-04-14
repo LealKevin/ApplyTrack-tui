@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"tui-apptrack/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -99,6 +100,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) ViewStats() string {
+	statsStyle := lipgloss.NewStyle().
+		Width(10).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#dcc394")).
+		Padding(0)
+
+	return statsStyle.Render(fmt.Sprintf(
+		"Apps: %d",
+		len(m.Apps.Apps),
+	))
+}
+
 func (m Model) View() string {
 	centered := centerStyle.Width(m.WindowWidth).Height(m.WindowHeight)
 
@@ -107,12 +121,17 @@ func (m Model) View() string {
 	case LoginPage:
 		content = m.ViewLoginPage()
 	case AppsPage:
-		content = m.ViewAppsPage()
+		left := m.ViewStats()
+		right := m.ViewAppsPage()
+
+		content = lipgloss.JoinVertical(lipgloss.Bottom,
+			lipgloss.JoinHorizontal(lipgloss.Center, left, right),
+			m.ViewCreateAppPage2(),
+		)
+
 	case LogoutPage:
 		content = m.ViewLogoutPage()
-	case CreateAppPage:
-		content = m.ViewCreateAppPage()
-	}
 
+	}
 	return centered.Render(borderStyle.Render(content))
 }
