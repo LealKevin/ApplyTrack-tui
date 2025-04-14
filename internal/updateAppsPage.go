@@ -38,6 +38,7 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		m.Alerts = ""
 		switch msg.String() {
 		case "/":
 			m.Apps.isFiltering = true

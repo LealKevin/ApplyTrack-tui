@@ -50,6 +50,7 @@ type Model struct {
 	WindowWidth  int
 	WindowHeight int
 
+	Alerts      string
 	CurrentPage Page
 	Login       LoginModel
 	Apps        AppsModel
@@ -59,6 +60,7 @@ type Model struct {
 func NewModel() Model {
 
 	return Model{
+		Alerts:      "",
 		CurrentPage: LoginPage,
 		Login:       NewLoginModel(),
 		Apps:        NewAppsModel(),
@@ -113,6 +115,26 @@ func (m Model) ViewStats() string {
 	))
 }
 
+func (m Model) viewLeftArea() string {
+	return m.ViewStats()
+}
+
+func (m Model) viewRightArea() string {
+	return m.ViewAppsPage()
+}
+
+func (m Model) viewBottomArea() string {
+	return m.ViewCreateAppPage2()
+}
+
+func (m Model) viewTopArea() string {
+	return m.viewAlerts()
+}
+
+func (m Model) viewAlerts() string {
+	return m.Alerts
+}
+
 func (m Model) View() string {
 	centered := centerStyle.Width(m.WindowWidth).Height(m.WindowHeight)
 
@@ -121,17 +143,19 @@ func (m Model) View() string {
 	case LoginPage:
 		content = m.ViewLoginPage()
 	case AppsPage:
-		left := m.ViewStats()
-		right := m.ViewAppsPage()
-
-		content = lipgloss.JoinVertical(lipgloss.Bottom,
-			lipgloss.JoinHorizontal(lipgloss.Center, left, right),
-			m.ViewCreateAppPage2(),
-		)
-
+		content =
+			lipgloss.JoinVertical(
+				lipgloss.Right,
+				m.viewTopArea(),
+				lipgloss.JoinHorizontal(lipgloss.Left,
+					m.viewLeftArea(),
+					m.viewRightArea(),
+				),
+				m.viewBottomArea(),
+			)
 	case LogoutPage:
 		content = m.ViewLogoutPage()
-
 	}
+
 	return centered.Render(borderStyle.Render(content))
 }

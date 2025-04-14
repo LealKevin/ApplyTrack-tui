@@ -98,6 +98,7 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
 			m.CreateApp.focused = false
 			m.Apps.table.Focused(true)
+			m.Alerts = "Application created with success"
 
 			for i, _ := range m.CreateApp.inputs {
 				m.CreateApp.inputs[i].Reset()
