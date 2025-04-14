@@ -128,7 +128,14 @@ func (m Model) viewBottomArea() string {
 }
 
 func (m Model) viewTopArea() string {
-	return m.viewAlerts()
+
+	border := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		Width(93).
+		AlignHorizontal(lipgloss.Center).
+		BorderForeground(lipgloss.Color("#dcc394")).
+		Padding(0)
+	return border.Render(m.viewAlerts())
 }
 
 func (m Model) viewAlerts() string {

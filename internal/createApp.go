@@ -90,6 +90,8 @@ func NewCreateAppModel() CreateAppModel {
 func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
+	m.Alerts = "Create new application"
+
 	switch msg := msg.(type) {
 	case utils.CreateAppMsg:
 		if msg.Err != nil {
@@ -142,6 +144,7 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.CreateApp.focused = false
 			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
 			m.Apps.table.Focused(true)
+			m.Alerts = "All Applications"
 			return m, nil
 
 		case tea.KeyTab:
@@ -190,13 +193,6 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, tea.Batch(cmds...)
 }
-
-//	case "sent":
-//		statusColor = "#8a943e"
-//	case "pending":
-//		statusColor = "#de935f"
-//	case "rejected":
-//		statusColor = "#a54241"
 
 func (m Model) ViewCreateAppPage2() string {
 
