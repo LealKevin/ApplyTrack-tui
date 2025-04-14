@@ -15,6 +15,7 @@ type CreateAppModel struct {
 	ErrMsg       error
 	isConfirm    bool
 	focused      bool
+	handled      bool
 }
 
 const (
@@ -25,6 +26,10 @@ const (
 	month
 	day
 	url
+)
+
+var (
+	statusColor = lipgloss.NewStyle()
 )
 
 func NewCreateAppModel() CreateAppModel {
@@ -63,8 +68,6 @@ func NewCreateAppModel() CreateAppModel {
 
 	inputs[status] = textinput.New()
 	inputs[status].Placeholder = "Status"
-	inputs[status].SetSuggestions([]string{"sent", "pending", "rejected"})
-	inputs[status].ShowSuggestions = true
 	inputs[status].CharLimit = 20
 	inputs[status].Width = 20
 	inputs[status].Prompt = ""
@@ -106,6 +109,30 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, utils.FetchAppsCmd()
 		}
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "1":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("sent")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#8a943e"))
+				m.CreateApp.handled = true
+			}
+		case "2":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("pending")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#de935f"))
+				m.CreateApp.handled = true
+			}
+		case "3":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("rejected")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#a54241"))
+				m.CreateApp.handled = true
+			}
+		}
+
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			if m.CreateApp.isConfirm {
@@ -152,15 +179,27 @@ func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.CreateApp.inputs[m.CreateApp.CurrentIndex].Focus()
 
-		i := m.CreateApp.CurrentIndex
-		var cmd tea.Cmd
-		m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
-		cmds = append(cmds, cmd)
+		if !m.CreateApp.handled {
+			i := m.CreateApp.CurrentIndex
+			var cmd tea.Cmd
+			m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+
+		m.CreateApp.handled = false
 	}
 	return m, tea.Batch(cmds...)
 }
 
+//	case "sent":
+//		statusColor = "#8a943e"
+//	case "pending":
+//		statusColor = "#de935f"
+//	case "rejected":
+//		statusColor = "#a54241"
+
 func (m Model) ViewCreateAppPage2() string {
+
 	notFocused := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		Width(93).
@@ -188,7 +227,7 @@ func (m Model) ViewCreateAppPage2() string {
 	content :=
 		m.CreateApp.inputs[title].View() +
 			m.CreateApp.inputs[company].View() +
-			m.CreateApp.inputs[status].View() +
+			statusColor.Render(m.CreateApp.inputs[status].View()) +
 			m.CreateApp.inputs[year].View() + "/ " + m.CreateApp.inputs[month].View() + "/ " + m.CreateApp.inputs[day].View() + "\n" +
 			m.CreateApp.inputs[url].View() + "\n" +
 			err

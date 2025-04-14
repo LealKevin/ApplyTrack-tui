@@ -80,15 +80,15 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			urlStr, ok := rawURL.(string)
 			if !ok || urlStr == "" {
-				m.Alerts = "⚠️ No valid URL to open."
+				m.Alerts = "No valid URL to open."
 				return m, nil
 			}
 
 			err := browser.OpenURL(urlStr)
 			if err != nil {
-				m.Alerts = "❌ Failed to open URL."
+				m.Alerts = "Failed to open URL."
 			} else {
-				m.Alerts = "🌐 Opening URL in your browser..."
+				m.Alerts = "Opening URL in your browser..."
 			}
 			return m, nil
 
