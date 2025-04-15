@@ -10,7 +10,6 @@ import (
 	"github.com/evertras/bubble-table/table"
 )
 
-// Lipgloss style
 var (
 	borderStyle = lipgloss.NewStyle().
 			Padding(1, 2).
@@ -129,19 +128,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) ViewStats() string {
-	statsStyle := lipgloss.NewStyle().
-		Width(10).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#dcc394")).
-		Padding(0)
-
-	return statsStyle.Render(fmt.Sprintf(
-		"Apps: %d",
-		len(m.Apps.Apps),
-	))
-}
-
 func (m Model) viewLeftArea() string {
 	return m.ViewStats()
 }
@@ -151,14 +137,26 @@ func (m Model) viewRightArea() string {
 }
 
 func (m Model) viewBottomArea() string {
-	return m.ViewCreateAppPage2()
+	return m.ViewCreateAppPage()
+}
+
+func (m Model) ViewStats() string {
+	statsStyle := lipgloss.NewStyle().
+		Width(10).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#117173")).
+		Padding(0)
+
+	return statsStyle.Render(fmt.Sprintf(
+		"Apps: %d",
+		len(m.Apps.Apps),
+	))
 }
 
 func (m Model) viewTopArea() string {
-
 	border := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Width(93).
+		Width(88).
 		AlignHorizontal(lipgloss.Center).
 		BorderForeground(lipgloss.Color("#dcc394")).
 		Padding(0)
@@ -167,6 +165,27 @@ func (m Model) viewTopArea() string {
 
 func (m Model) viewAlerts() string {
 	return m.Alerts
+}
+
+var leftSize int = 25
+
+func (m Model) viewNotesArea() string {
+	style := lipgloss.NewStyle().
+		Width(leftSize).
+		Height(20).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#117173")).
+		Padding(1)
+
+	return style.Render(" Notes\n\n(coming soon...)")
+}
+
+func (m Model) spaceHolder() string {
+	style := lipgloss.NewStyle().
+		Width(leftSize + 2).
+		Height(0)
+
+	return style.Render(" ")
 }
 
 func (m Model) View() string {
@@ -179,14 +198,24 @@ func (m Model) View() string {
 	case AppsPage:
 		content =
 			lipgloss.JoinVertical(
+
 				lipgloss.Right,
-				m.viewTopArea(),
+				lipgloss.JoinHorizontal(lipgloss.Left,
+					m.viewTopArea(),
+					m.spaceHolder(),
+				),
+
 				lipgloss.JoinHorizontal(lipgloss.Left,
 					m.viewLeftArea(),
 					m.viewRightArea(),
+					m.viewNotesArea(),
 				),
-				m.viewBottomArea(),
+				lipgloss.JoinHorizontal(lipgloss.Left,
+					m.viewBottomArea(),
+					m.spaceHolder(),
+				),
 			)
+
 	case LogoutPage:
 		content = m.ViewLogoutPage()
 	}

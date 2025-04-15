@@ -65,6 +65,19 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ResetCreateAppInputs()
 
 		return m, utils.FetchAppsCmd()
+	case utils.CreateAppMsg:
+		if msg.Err != nil {
+			m.Alerts = fmt.Sprintf("Error: %v", msg.Err)
+			return m, nil
+		}
+
+		m.CreateApp.focused = false
+		m.Apps.table = m.Apps.table.Focused(true).WithBaseStyle(tableFocus)
+		m.Alerts = "Application successfully created"
+		m.ResetCreateAppInputs()
+
+		return m, utils.FetchAppsCmd()
+
 	case tea.KeyMsg:
 		m.Alerts = ""
 		switch msg.String() {
@@ -180,7 +193,7 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "r":
 			return m, utils.FetchAppsCmd()
-		case "l":
+		case "esc":
 			m.CurrentPage = LogoutPage
 			return m, nil
 		default:

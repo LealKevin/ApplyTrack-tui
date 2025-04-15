@@ -59,7 +59,7 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[title] = textinput.New()
 	inputs[title].Placeholder = "Title"
 	inputs[title].CharLimit = 156
-	inputs[title].Width = 35
+	inputs[title].Width = 30
 	inputs[title].Prompt = ""
 
 	inputs[company] = textinput.New()
@@ -113,169 +113,144 @@ func NewCreateAppModel() CreateAppModel {
 func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	if m.Edit.inEdit {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.Type {
-			case tea.KeyEnter:
-				if !m.CreateApp.isConfirm {
-					m.CreateApp.isConfirm = true
-					m.Alerts = "Press 'enter' to confirm edition"
-					return m, nil
-				}
-
-				if m.CreateApp.isConfirm {
-					m.Edit.inEdit = false
-					m.CreateApp.focused = false
-					m.CreateApp.isConfirm = false
-					m.Apps.table = m.Apps.table.Focused(true)
-					m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-					updated := m.parseApp()
-					cmd := utils.UpdateAppCmd(m.Edit.editingID, updated)
-
-					m.ResetCreateAppInputs()
-					m.Alerts = "Updating application..."
-					return m, cmd
-				}
-			case tea.KeyEsc:
-				m.Edit.inEdit = false
-				m.CreateApp.focused = false
-				m.CreateApp.isConfirm = false
-				m.Apps.table = m.Apps.table.Focused(true)
-				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-				m.ResetCreateAppInputs()
-
-				for i := range m.CreateApp.inputs {
-					m.CreateApp.inputs[i].Blur()
-				}
-
-				m.Alerts = "Cancelled editing"
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyTab:
+			if m.CreateApp.CurrentIndex == len(m.CreateApp.inputs)-1 {
+				m.CreateApp.CurrentIndex = 0
+			} else {
+				m.CreateApp.CurrentIndex++
+			}
+		case tea.KeyShiftTab:
+			if m.CreateApp.CurrentIndex == 0 {
+				m.CreateApp.CurrentIndex = len(m.CreateApp.inputs) - 1
+			} else {
+				m.CreateApp.CurrentIndex--
+			}
+		case tea.KeyEnter:
+			if !m.CreateApp.isConfirm {
+				m.CreateApp.isConfirm = true
+				m.Alerts = "Press 'enter' to confirm " + ternary(m.Edit.inEdit, "edition", "creation")
 				return m, nil
 			}
+
+			m.CreateApp.isConfirm = false
+			m.CreateApp.focused = false
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus).Focused(true)
+
+			for i := range m.CreateApp.inputs {
+				m.CreateApp.inputs[i].Blur()
+			}
+
+			if m.Edit.inEdit {
+				m.Edit.inEdit = false
+				app := m.parseApp()
+				cmd := utils.UpdateAppCmd(m.Edit.editingID, app)
+				m.ResetCreateAppInputs()
+				m.Alerts = "Updating application..."
+				return m, cmd
+			} else {
+				m.Alerts = "Creating application..."
+				app := m.parseApp()
+				cmd := utils.CreateApp(app)
+				m.ResetCreateAppInputs()
+				return m, cmd
+			}
+
+		case tea.KeyEsc, tea.KeyCtrlC:
+			m.CreateApp.isConfirm = false
+			m.CreateApp.focused = false
+			m.Edit.inEdit = false
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus).Focused(true)
+			m.ResetCreateAppInputs()
+			for i := range m.CreateApp.inputs {
+				m.CreateApp.inputs[i].Blur()
+			}
+			m.Alerts = "Cancelled"
+			return m, nil
+		}
+
+		switch msg.String() {
+		case "1":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("sent")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#8a943e"))
+				m.CreateApp.handled = true
+			}
+		case "2":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("pending")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#de935f"))
+				m.CreateApp.handled = true
+			}
+		case "3":
+			if m.CreateApp.inputs[status].Focused() {
+				m.CreateApp.inputs[status].SetValue("rejected")
+				m.CreateApp.inputs[status].CursorEnd()
+				statusColor = statusColor.Foreground(lipgloss.Color("#a54241"))
+				m.CreateApp.handled = true
+			}
+		}
+
+		for i := range m.CreateApp.inputs {
+			m.CreateApp.inputs[i].Blur()
+		}
+		m.CreateApp.inputs[m.CreateApp.CurrentIndex].Focus()
+
+		if !m.CreateApp.handled {
 			i := m.CreateApp.CurrentIndex
 			var cmd tea.Cmd
 			m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
 			cmds = append(cmds, cmd)
 		}
-	} else {
-		m.Alerts = "Create new application"
+		m.CreateApp.handled = false
 
-		switch msg := msg.(type) {
-		case utils.CreateAppMsg:
-			if msg.Err != nil {
-				m.CreateApp.ErrMsg = msg.Err
-				m.CreateApp.isConfirm = false
-				return m, nil
-			}
-			if msg.Created {
-				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-				m.CreateApp.focused = false
-				m.Apps.table.Focused(true)
-				m.Alerts = "Application created with success"
-				m.ResetCreateAppInputs()
+	case utils.CreateAppMsg:
+		if msg.Err != nil {
+			m.CreateApp.ErrMsg = msg.Err
+			return m, nil
+		}
+		if msg.Created {
+			m.Alerts = "Application created with success"
+			m.ResetCreateAppInputs()
+			return m, utils.FetchAppsCmd()
+		}
 
-				return m, utils.FetchAppsCmd()
-			}
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "1":
-				if m.CreateApp.inputs[status].Focused() {
-					m.CreateApp.inputs[status].SetValue("sent")
-					m.CreateApp.inputs[status].CursorEnd()
-					statusColor = statusColor.Foreground(lipgloss.Color("#8a943e"))
-					m.CreateApp.handled = true
-				}
-			case "2":
-				if m.CreateApp.inputs[status].Focused() {
-					m.CreateApp.inputs[status].SetValue("pending")
-					m.CreateApp.inputs[status].CursorEnd()
-					statusColor = statusColor.Foreground(lipgloss.Color("#de935f"))
-					m.CreateApp.handled = true
-				}
-			case "3":
-				if m.CreateApp.inputs[status].Focused() {
-					m.CreateApp.inputs[status].SetValue("rejected")
-					m.CreateApp.inputs[status].CursorEnd()
-					statusColor = statusColor.Foreground(lipgloss.Color("#a54241"))
-					m.CreateApp.handled = true
-				}
-			}
-
-			switch msg.Type {
-			case tea.KeyCtrlC, tea.KeyEsc:
-				if m.CreateApp.isConfirm {
-					m.CreateApp.isConfirm = false
-					return m, nil
-				}
-				m.CreateApp.focused = false
-				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-				m.Apps.table.Focused(true)
-				m.Alerts = "All Applications"
-				for i := range m.CreateApp.inputs {
-					m.CreateApp.inputs[i].Blur()
-				}
-				return m, nil
-
-			case tea.KeyTab:
-				if m.CreateApp.CurrentIndex == len(m.CreateApp.inputs)-1 {
-					m.CreateApp.CurrentIndex = 0
-				} else {
-					m.CreateApp.CurrentIndex++
-				}
-
-			case tea.KeyShiftTab:
-				if m.CreateApp.CurrentIndex == 0 {
-					m.CreateApp.CurrentIndex = len(m.CreateApp.inputs) - 1
-				} else {
-					m.CreateApp.CurrentIndex--
-				}
-
-			case tea.KeyEnter:
-				if !m.CreateApp.isConfirm {
-					m.CreateApp.isConfirm = true
-					m.Alerts = "Press 'enter' to confirm creation"
-					return m, nil
-				}
-
-				if m.CreateApp.isConfirm {
-					m.CreateApp.isConfirm = false
-					m.Apps.table.Focused(true)
-					app := m.parseApp()
-					cmd := utils.CreateApp(app)
-
-					return m, cmd
-				}
-			}
-
-			for i := range m.CreateApp.inputs {
-				m.CreateApp.inputs[i].Blur()
-			}
-			m.CreateApp.inputs[m.CreateApp.CurrentIndex].Focus()
-
-			if !m.CreateApp.handled {
-				i := m.CreateApp.CurrentIndex
-				var cmd tea.Cmd
-				m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
-				cmds = append(cmds, cmd)
-			}
-
-			m.CreateApp.handled = false
+	case utils.UpdateAppMsg:
+		if msg.Err != nil {
+			m.Alerts = fmt.Sprintf("Error while updating: %v", msg.Err)
+			return m, nil
+		}
+		if msg.IsUpdated {
+			m.Alerts = "Application updated with success"
+			m.ResetCreateAppInputs()
+			return m, utils.FetchAppsCmd()
 		}
 	}
+
 	return m, tea.Batch(cmds...)
 }
+func ternary(condition bool, a, b string) string {
+	if condition {
+		return a
+	}
+	return b
+}
 
-func (m Model) ViewCreateAppPage2() string {
+func (m Model) ViewCreateAppPage() string {
 
 	notFocused := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Width(93).
+		Width(88).
 		BorderForeground(lipgloss.Color("240")).
 		Padding(0)
 
 	focused := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Width(93).
+		Width(88).
 		BorderForeground(lipgloss.Color("#dcc394")).
 		Padding(0)
 
