@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 	"tui-apptrack/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -32,12 +34,30 @@ var (
 	statusColor = lipgloss.NewStyle()
 )
 
+func today(timeType string) string {
+
+	year, month, day := time.Now().Date()
+
+	var result string
+
+	switch timeType {
+	case "year":
+		result = strconv.Itoa(year)
+	case "month":
+		result = fmt.Sprintf("%02d", month)
+	case "day":
+		result = fmt.Sprintf("%02d", day)
+	}
+
+	return result
+
+}
+
 func NewCreateAppModel() CreateAppModel {
 	inputs := make([]textinput.Model, 7)
 
 	inputs[title] = textinput.New()
 	inputs[title].Placeholder = "Title"
-	inputs[title].Focus()
 	inputs[title].CharLimit = 156
 	inputs[title].Width = 35
 	inputs[title].Prompt = ""
@@ -49,19 +69,22 @@ func NewCreateAppModel() CreateAppModel {
 	inputs[company].Prompt = ""
 
 	inputs[year] = textinput.New()
-	inputs[year].Placeholder = "YYYY"
+	inputs[year].Placeholder = today("year")
+	inputs[year].SetValue(today("year"))
 	inputs[year].CharLimit = 4
 	inputs[year].Width = 4
 	inputs[year].Prompt = ""
 
 	inputs[month] = textinput.New()
-	inputs[month].Placeholder = "MM"
+	inputs[month].Placeholder = today("month")
+	inputs[month].SetValue(today("month"))
 	inputs[month].CharLimit = 2
 	inputs[month].Width = 2
 	inputs[month].Prompt = ""
 
 	inputs[day] = textinput.New()
-	inputs[day].Placeholder = "DD"
+	inputs[day].Placeholder = today("day")
+	inputs[day].SetValue(today("day"))
 	inputs[day].CharLimit = 2
 	inputs[day].Width = 2
 	inputs[day].Prompt = ""
@@ -90,106 +113,154 @@ func NewCreateAppModel() CreateAppModel {
 func (m Model) UpdateCreateApp(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	m.Alerts = "Create new application"
+	if m.Edit.inEdit {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.Type {
+			case tea.KeyEnter:
+				if !m.CreateApp.isConfirm {
+					m.CreateApp.isConfirm = true
+					m.Alerts = "Press 'enter' to confirm edition"
+					return m, nil
+				}
 
-	switch msg := msg.(type) {
-	case utils.CreateAppMsg:
-		if msg.Err != nil {
-			m.CreateApp.ErrMsg = msg.Err
-			m.CreateApp.isConfirm = false
-			return m, nil
-		}
-		if msg.Created {
-			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-			m.CreateApp.focused = false
-			m.Apps.table.Focused(true)
-			m.Alerts = "Application created with success"
+				if m.CreateApp.isConfirm {
+					m.Edit.inEdit = false
+					m.CreateApp.focused = false
+					m.CreateApp.isConfirm = false
+					m.Apps.table = m.Apps.table.Focused(true)
+					m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+					updated := m.parseApp()
+					cmd := utils.UpdateAppCmd(m.Edit.editingID, updated)
 
-			for i, _ := range m.CreateApp.inputs {
-				m.CreateApp.inputs[i].Reset()
-			}
-			return m, utils.FetchAppsCmd()
-		}
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "1":
-			if m.CreateApp.inputs[status].Focused() {
-				m.CreateApp.inputs[status].SetValue("sent")
-				m.CreateApp.inputs[status].CursorEnd()
-				statusColor = statusColor.Foreground(lipgloss.Color("#8a943e"))
-				m.CreateApp.handled = true
-			}
-		case "2":
-			if m.CreateApp.inputs[status].Focused() {
-				m.CreateApp.inputs[status].SetValue("pending")
-				m.CreateApp.inputs[status].CursorEnd()
-				statusColor = statusColor.Foreground(lipgloss.Color("#de935f"))
-				m.CreateApp.handled = true
-			}
-		case "3":
-			if m.CreateApp.inputs[status].Focused() {
-				m.CreateApp.inputs[status].SetValue("rejected")
-				m.CreateApp.inputs[status].CursorEnd()
-				statusColor = statusColor.Foreground(lipgloss.Color("#a54241"))
-				m.CreateApp.handled = true
-			}
-		}
-
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			if m.CreateApp.isConfirm {
+					m.ResetCreateAppInputs()
+					m.Alerts = "Updating application..."
+					return m, cmd
+				}
+			case tea.KeyEsc:
+				m.Edit.inEdit = false
+				m.CreateApp.focused = false
 				m.CreateApp.isConfirm = false
+				m.Apps.table = m.Apps.table.Focused(true)
+				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+				m.ResetCreateAppInputs()
+
+				for i := range m.CreateApp.inputs {
+					m.CreateApp.inputs[i].Blur()
+				}
+
+				m.Alerts = "Cancelled editing"
 				return m, nil
 			}
-			m.CreateApp.focused = false
-			m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
-			m.Apps.table.Focused(true)
-			m.Alerts = "All Applications"
-			return m, nil
-
-		case tea.KeyTab:
-			if m.CreateApp.CurrentIndex == len(m.CreateApp.inputs)-1 {
-				m.CreateApp.CurrentIndex = 0
-			} else {
-				m.CreateApp.CurrentIndex++
-			}
-
-		case tea.KeyShiftTab:
-			if m.CreateApp.CurrentIndex == 0 {
-				m.CreateApp.CurrentIndex = len(m.CreateApp.inputs) - 1
-			} else {
-				m.CreateApp.CurrentIndex--
-			}
-
-		case tea.KeyEnter:
-			if !m.CreateApp.isConfirm {
-				m.CreateApp.isConfirm = true
-				return m, nil
-			}
-
-			if m.CreateApp.isConfirm {
-				m.CreateApp.isConfirm = false
-				m.Apps.table.Focused(true)
-				app := m.parseApp()
-				cmd := utils.CreateApp(app)
-
-				return m, cmd
-			}
-		}
-
-		for i := range m.CreateApp.inputs {
-			m.CreateApp.inputs[i].Blur()
-		}
-		m.CreateApp.inputs[m.CreateApp.CurrentIndex].Focus()
-
-		if !m.CreateApp.handled {
 			i := m.CreateApp.CurrentIndex
 			var cmd tea.Cmd
 			m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
 			cmds = append(cmds, cmd)
 		}
+	} else {
+		m.Alerts = "Create new application"
 
-		m.CreateApp.handled = false
+		switch msg := msg.(type) {
+		case utils.CreateAppMsg:
+			if msg.Err != nil {
+				m.CreateApp.ErrMsg = msg.Err
+				m.CreateApp.isConfirm = false
+				return m, nil
+			}
+			if msg.Created {
+				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+				m.CreateApp.focused = false
+				m.Apps.table.Focused(true)
+				m.Alerts = "Application created with success"
+				m.ResetCreateAppInputs()
+
+				return m, utils.FetchAppsCmd()
+			}
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "1":
+				if m.CreateApp.inputs[status].Focused() {
+					m.CreateApp.inputs[status].SetValue("sent")
+					m.CreateApp.inputs[status].CursorEnd()
+					statusColor = statusColor.Foreground(lipgloss.Color("#8a943e"))
+					m.CreateApp.handled = true
+				}
+			case "2":
+				if m.CreateApp.inputs[status].Focused() {
+					m.CreateApp.inputs[status].SetValue("pending")
+					m.CreateApp.inputs[status].CursorEnd()
+					statusColor = statusColor.Foreground(lipgloss.Color("#de935f"))
+					m.CreateApp.handled = true
+				}
+			case "3":
+				if m.CreateApp.inputs[status].Focused() {
+					m.CreateApp.inputs[status].SetValue("rejected")
+					m.CreateApp.inputs[status].CursorEnd()
+					statusColor = statusColor.Foreground(lipgloss.Color("#a54241"))
+					m.CreateApp.handled = true
+				}
+			}
+
+			switch msg.Type {
+			case tea.KeyCtrlC, tea.KeyEsc:
+				if m.CreateApp.isConfirm {
+					m.CreateApp.isConfirm = false
+					return m, nil
+				}
+				m.CreateApp.focused = false
+				m.Apps.table = m.Apps.table.WithBaseStyle(tableFocus)
+				m.Apps.table.Focused(true)
+				m.Alerts = "All Applications"
+				for i := range m.CreateApp.inputs {
+					m.CreateApp.inputs[i].Blur()
+				}
+				return m, nil
+
+			case tea.KeyTab:
+				if m.CreateApp.CurrentIndex == len(m.CreateApp.inputs)-1 {
+					m.CreateApp.CurrentIndex = 0
+				} else {
+					m.CreateApp.CurrentIndex++
+				}
+
+			case tea.KeyShiftTab:
+				if m.CreateApp.CurrentIndex == 0 {
+					m.CreateApp.CurrentIndex = len(m.CreateApp.inputs) - 1
+				} else {
+					m.CreateApp.CurrentIndex--
+				}
+
+			case tea.KeyEnter:
+				if !m.CreateApp.isConfirm {
+					m.CreateApp.isConfirm = true
+					m.Alerts = "Press 'enter' to confirm creation"
+					return m, nil
+				}
+
+				if m.CreateApp.isConfirm {
+					m.CreateApp.isConfirm = false
+					m.Apps.table.Focused(true)
+					app := m.parseApp()
+					cmd := utils.CreateApp(app)
+
+					return m, cmd
+				}
+			}
+
+			for i := range m.CreateApp.inputs {
+				m.CreateApp.inputs[i].Blur()
+			}
+			m.CreateApp.inputs[m.CreateApp.CurrentIndex].Focus()
+
+			if !m.CreateApp.handled {
+				i := m.CreateApp.CurrentIndex
+				var cmd tea.Cmd
+				m.CreateApp.inputs[i], cmd = m.CreateApp.inputs[i].Update(msg)
+				cmds = append(cmds, cmd)
+			}
+
+			m.CreateApp.handled = false
+		}
 	}
 	return m, tea.Batch(cmds...)
 }
@@ -211,9 +282,6 @@ func (m Model) ViewCreateAppPage2() string {
 	alignCenter := lipgloss.NewStyle()
 	alignCenter.AlignHorizontal(lipgloss.Center)
 	confirm := ""
-	if m.CreateApp.isConfirm {
-		confirm = "Confirm to create app"
-	}
 
 	err := ""
 	if m.CreateApp.ErrMsg != nil {
@@ -224,12 +292,12 @@ func (m Model) ViewCreateAppPage2() string {
 		m.CreateApp.inputs[title].View() +
 			m.CreateApp.inputs[company].View() +
 			statusColor.Render(m.CreateApp.inputs[status].View()) +
-			m.CreateApp.inputs[year].View() + "/ " + m.CreateApp.inputs[month].View() + "/ " + m.CreateApp.inputs[day].View() + "\n" +
+			m.CreateApp.inputs[year].View() + "/" + m.CreateApp.inputs[month].View() + "/" + m.CreateApp.inputs[day].View() + "\n" +
 			m.CreateApp.inputs[url].View() + "\n" +
 			err
 
 	if confirm != "" {
-		content += "\n" + alignCenter.Render(confirm) + "\n"
+		content += "\n"
 	}
 
 	if m.CreateApp.focused {
@@ -253,5 +321,66 @@ func (m Model) parseApp() utils.CreateAppRequest {
 
 func joinDate(year, month, day string) string {
 	return fmt.Sprintf(year + "-" + month + "-" + day)
+}
 
+func (m *Model) ResetCreateAppInputs() {
+	todayYear := today("year")
+	todayMonth := fmt.Sprintf("%02d", time.Now().Month())
+	todayDay := fmt.Sprintf("%02d", time.Now().Day())
+
+	m.CreateApp.inputs[title].SetValue("")
+	m.CreateApp.inputs[company].SetValue("")
+	m.CreateApp.inputs[status].SetValue("")
+	m.CreateApp.inputs[year].SetValue(todayYear)
+	m.CreateApp.inputs[month].SetValue(todayMonth)
+	m.CreateApp.inputs[day].SetValue(todayDay)
+	m.CreateApp.inputs[url].SetValue("")
+
+	m.CreateApp.CurrentIndex = title
+	m.CreateApp.inputs[title].Focus()
+}
+
+func (m *Model) SetEditInputs() {
+	row := m.Apps.table.HighlightedRow()
+	id, ok := row.Data["id"].(int32)
+	if !ok {
+		m.Alerts = "Unable to get application ID"
+		return
+	}
+
+	var app utils.App
+	found := false
+	for _, a := range m.Apps.Apps {
+		if a.ID == id {
+			app = a
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		m.Alerts = "Application not found"
+		return
+	}
+
+	m.Edit.editingID = app.ID
+
+	m.CreateApp.inputs[title].SetValue(app.TitleApplication)
+	m.CreateApp.inputs[company].SetValue(app.Company)
+	m.CreateApp.inputs[status].SetValue(app.Status)
+
+	date, err := time.Parse("2006-01-02", app.SentDate)
+	if err == nil {
+		m.CreateApp.inputs[year].SetValue(fmt.Sprintf("%04d", date.Year()))
+		m.CreateApp.inputs[month].SetValue(fmt.Sprintf("%02d", int(date.Month())))
+		m.CreateApp.inputs[day].SetValue(fmt.Sprintf("%02d", date.Day()))
+	} else {
+		m.Alerts = "Invalid date format"
+	}
+	m.CreateApp.inputs[url].SetValue(app.UrlApplication)
+
+	m.CreateApp.CurrentIndex = title
+	m.CreateApp.inputs[title].Focus()
+
+	m.Alerts = "Editing: " + app.TitleApplication
 }

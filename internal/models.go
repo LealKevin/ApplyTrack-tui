@@ -45,6 +45,19 @@ type AppsModel struct {
 	Temp        utils.App
 }
 
+type EditModel struct {
+	err       error
+	inEdit    bool
+	editingID int32
+}
+
+func NewEditModel() EditModel {
+	return EditModel{
+		err:    nil,
+		inEdit: false,
+	}
+}
+
 type Model struct {
 	User         User
 	WindowWidth  int
@@ -56,6 +69,7 @@ type Model struct {
 	Apps        AppsModel
 	CreateApp   CreateAppModel
 	Delete      DeleteModel
+	Edit        EditModel
 }
 
 type DeleteModel struct {
@@ -77,6 +91,7 @@ func NewModel() Model {
 		Apps:        NewAppsModel(),
 		CreateApp:   NewCreateAppModel(),
 		Delete:      NewDeleteModel(),
+		Edit:        NewEditModel(),
 	}
 }
 

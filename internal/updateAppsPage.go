@@ -23,7 +23,10 @@ func (a AppsModel) filterRows(status string) []table.Row {
 func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	m.Alerts = "All Applications"
+	if !m.Edit.inEdit {
+		m.Alerts = "All Applications"
+		m.Apps.table.Focused(true)
+	}
 
 	if m.CreateApp.focused {
 		return m.UpdateCreateApp(msg)
@@ -49,6 +52,19 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Alerts = "Sucessfull deleted"
 		return m, utils.FetchAppsCmd()
 
+	case utils.UpdateAppMsg:
+		if msg.Err != nil {
+			m.Alerts = fmt.Sprintf("Error: %v", msg.Err)
+			return m, nil
+		}
+
+		m.Edit.inEdit = false
+		m.CreateApp.focused = false
+		m.Apps.table = m.Apps.table.Focused(true).WithBaseStyle(tableFocus)
+		m.Alerts = "Application successfully updated"
+		m.ResetCreateAppInputs()
+
+		return m, utils.FetchAppsCmd()
 	case tea.KeyMsg:
 		m.Alerts = ""
 		switch msg.String() {
@@ -57,6 +73,10 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Apps.table, cmd = m.Apps.table.Update(msg)
 			return m, cmd
 		case "esc", "enter":
+			if m.Edit.inEdit {
+				m.Edit.inEdit = false
+				m.Alerts = "All Applications"
+			}
 			if m.Apps.isFiltering {
 				m.Apps.isFiltering = false
 				m.Apps.table, cmd = m.Apps.table.Update(msg)
@@ -104,18 +124,12 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "e":
-			row := m.Apps.table.HighlightedRow()
-			id, ok := row.Data["id"].(int32)
-			if !ok {
-				fmt.Printf("Error: casting ID:%v", row)
-				return m, nil
-			}
-			for _, app := range m.Apps.Apps {
-				if app.ID == id {
-					m.Apps.Temp = app
-					break
-				}
-			}
+			m.Edit.inEdit = true
+			m.SetEditInputs()
+			m.CreateApp.focused = true
+			m.Apps.table = m.Apps.table.WithBaseStyle(tableBlured)
+			m.Apps.table.Focused(false)
+
 			return m, nil
 		case "d":
 			if !m.Delete.ConfirmDelete {
@@ -140,6 +154,8 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.CreateApp.focused = true
 			m.Apps.table = m.Apps.table.WithBaseStyle(tableBlured)
 			m.Apps.table.Focused(false)
+			m.CreateApp.inputs[title].Focus()
+			m.ResetCreateAppInputs()
 			m.Alerts = "Create new application"
 			return m, nil
 		case "4":

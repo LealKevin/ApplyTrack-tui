@@ -93,7 +93,6 @@ type CreateAppRequest struct {
 }
 
 func CreateApp(app CreateAppRequest) tea.Cmd {
-	fmt.Printf("Sent date: %v, Status: %v ", app.SentDate, app.Status)
 	return func() tea.Msg {
 
 		tokenBytes, err := os.ReadFile(".token")
@@ -256,17 +255,69 @@ func DeleteAppCmd(appId string) tea.Cmd {
 		})
 
 		c := http.Client{}
-
 		resp, err := c.Do(req)
 		if err != nil {
 			return DeleteMsg{Err: fmt.Errorf("Unable to request error: %v", err)}
 		}
 		defer resp.Body.Close()
-
 		if resp.StatusCode != http.StatusOK {
 			return DeleteMsg{Err: fmt.Errorf("Status error: %v", resp.Status)}
 		}
 
 		return DeleteMsg{Err: nil}
+	}
+}
+
+type UpdateAppMsg struct {
+	Err       error
+	IsUpdated bool
+}
+
+type UpdateAppRequest struct {
+	TitleApplication string `json:"title"`
+	Company          string `json:"company"`
+	SentDate         string `json:"sent_date"`
+	Status           string `json:"status"`
+	UrlApplication   string `json:"url_application"`
+}
+
+func UpdateAppCmd(id int32, app CreateAppRequest) tea.Cmd {
+	return func() tea.Msg {
+		tokenBytes, err := os.ReadFile(".token")
+		token := string(tokenBytes)
+
+		jsonApp, err := json.Marshal(app)
+		if err != nil {
+			fmt.Print(err)
+			return CreateAppMsg{Err: fmt.Errorf("Unable to encode app to json: %v", err)}
+		}
+
+		idStr := fmt.Sprintf("%v", id)
+
+		req, err := http.NewRequest("PUT", url+"applications/"+idStr, bytes.NewBuffer(jsonApp))
+		if err != nil {
+			fmt.Print(err)
+			return UpdateAppMsg{Err: fmt.Errorf("Unable to create request: %v", err)}
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:  "jwt",
+			Value: token,
+		})
+
+		c := &http.Client{}
+
+		resp, err := c.Do(req)
+		if err != nil {
+			fmt.Print(err)
+			return UpdateAppMsg{Err: fmt.Errorf("Unable to request: %v", err)}
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return UpdateAppMsg{Err: fmt.Errorf("Server returned status %s", resp.Status)}
+		}
+
+		return UpdateAppMsg{Err: nil, IsUpdated: true}
 	}
 }
