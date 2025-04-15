@@ -231,3 +231,42 @@ func SaveTokenCmd(token string) tea.Cmd {
 		return SaveTokenMsg{Err: nil}
 	}
 }
+
+type DeleteMsg struct {
+	Err error
+}
+
+func DeleteAppCmd(appId string) tea.Cmd {
+	return func() tea.Msg {
+		tokenBytes, err := os.ReadFile(".token")
+		if err != nil {
+			return CreateAppMsg{Err: fmt.Errorf("To read token file: %v", err)}
+		}
+		token := string(tokenBytes)
+
+		req, err := http.NewRequest("DELETE", url+"applications/"+appId, nil)
+		if err != nil {
+			return DeleteMsg{Err: fmt.Errorf("Unable to create request error: %v", err)}
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:  "jwt",
+			Value: token,
+		})
+
+		c := http.Client{}
+
+		resp, err := c.Do(req)
+		if err != nil {
+			return DeleteMsg{Err: fmt.Errorf("Unable to request error: %v", err)}
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return DeleteMsg{Err: fmt.Errorf("Status error: %v", resp.Status)}
+		}
+
+		return DeleteMsg{Err: nil}
+	}
+}

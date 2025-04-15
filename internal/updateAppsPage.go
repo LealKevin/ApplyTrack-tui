@@ -40,6 +40,15 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Apps.table = m.Apps.table.WithRows(filtered)
 		return m, nil
 
+	case utils.DeleteMsg:
+		if msg.Err != nil {
+			m.Alerts = fmt.Sprintf("%v", msg.Err)
+			return m, nil
+		}
+
+		m.Alerts = "Sucessfull deleted"
+		return m, utils.FetchAppsCmd()
+
 	case tea.KeyMsg:
 		m.Alerts = ""
 		switch msg.String() {
@@ -108,6 +117,25 @@ func (m Model) UpdateAppsPage(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			return m, nil
+		case "d":
+			if !m.Delete.ConfirmDelete {
+				m.Delete.ConfirmDelete = true
+				m.Alerts = "Press 'd' again to confirm deletion"
+				return m, nil
+			}
+			m.Delete.ConfirmDelete = false
+
+			row := m.Apps.table.HighlightedRow()
+			rawAppId := row.Data["id"]
+			id, ok := rawAppId.(int32)
+			if !ok {
+				m.Alerts = "Invalid app ID"
+				return m, nil
+			}
+			appIDstr := fmt.Sprintf("%d", id)
+
+			return m, utils.DeleteAppCmd(appIDstr)
+
 		case "n":
 			m.CreateApp.focused = true
 			m.Apps.table = m.Apps.table.WithBaseStyle(tableBlured)

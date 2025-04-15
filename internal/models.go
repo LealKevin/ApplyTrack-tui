@@ -55,6 +55,17 @@ type Model struct {
 	Login       LoginModel
 	Apps        AppsModel
 	CreateApp   CreateAppModel
+	Delete      DeleteModel
+}
+
+type DeleteModel struct {
+	ConfirmDelete bool
+}
+
+func NewDeleteModel() DeleteModel {
+	return DeleteModel{
+		ConfirmDelete: false,
+	}
 }
 
 func NewModel() Model {
@@ -65,6 +76,7 @@ func NewModel() Model {
 		Login:       NewLoginModel(),
 		Apps:        NewAppsModel(),
 		CreateApp:   NewCreateAppModel(),
+		Delete:      NewDeleteModel(),
 	}
 }
 
